@@ -9,6 +9,7 @@ var map = new maplibregl.Map({
     container: 'map',
     style: {
         "version": 8,
+        "glyphs": "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
         "sources": {
             "osm": {
                 "type": "raster",
@@ -34,7 +35,11 @@ var map = new maplibregl.Map({
                 "source": "areas",
                 "source-layer": "areas",
                 "paint": {
-                    "fill-color": "#ff6d33",
+                    "fill-color": [
+                        'case',
+                        ['==', ['get', 'sector'], 'External'], '#ff6d33',
+                        /* sinon */ '#3388ff'
+                    ],
                     "fill-opacity": 0.4
                 }
             },
@@ -43,7 +48,7 @@ var map = new maplibregl.Map({
                 "type": "line",
                 "source": "areas",
                 "source-layer": "areas",
-                "minim-zoom": 10,
+                "min-zoom": 10,
                 "paint": {
                     "line-color": "#6b1f01",
                     "line-width": 2,
@@ -66,11 +71,44 @@ var map = new maplibregl.Map({
                     ],
                     "line-width": 2
                 }
+            },
+            {
+                "id": "area-centroids-labels",
+                "type": "symbol",
+                "source": "areas",
+                "source-layer": "area_centroids",
+                "layout": {
+                    "text-field": "{sector}",
+                    "text-font": ["Noto Sans Italic"],
+                    "text-size": 14
+                },
+                "paint": {
+                    "text-color": "#FFFFFF",
+                }
             }
         ]
     },
     center: [10,0],
     zoom: 6
+});
+
+// Fonction pour sélectionner un pipe et afficher une popup
+map.on('click', function(e) {
+    var features = map.queryRenderedFeatures(e.point, {
+        layers: ['pipes']
+    });
+    if (features.length > 0) {
+        var pipe = features[0];
+        var props = pipe.properties;
+        var html = '<b>Pipe</b><br>';
+        for (var key in props) {
+            html += key + ': ' + props[key] + '<br>';
+        }
+        new maplibregl.Popup()
+            .setLngLat(e.lngLat)
+            .setHTML(html)
+            .addTo(map);
+    }
 });
 </script>
 {% endblock %}

@@ -15,3 +15,4 @@
 /django-avancé.pdf
 /django-gis.v2.pdf
 /trajet.gpx
+pipedata/__pycache__/*.pyc

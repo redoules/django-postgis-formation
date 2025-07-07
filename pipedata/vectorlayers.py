@@ -11,8 +11,11 @@ class AreaVectorLayer(VectorLayer):
     # all attributes available in vector layer definition can be defined
 
 class AreaCenterVectorLayer(VectorLayer):
+    id = "area_centroids"
     queryset = Area.objects.annotate(centroid=Centroid("geom"))
-
+    geom_field = "centroid"
+    tile_fields = ("area", "sector")
+    min_zoom = 10
 
 class PipeVectorLayer(VectorLayer):
     model = Pipe  # your model, as django conventions you can use queryset or get_queryset method instead)
