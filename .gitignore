@@ -1,0 +1,17 @@
+/.env
+/.ruff_cache
+/.vscode
+/COMM_RG_01M_2016_3035.gpkg
+/CargoVélotaf (1).gpx
+/Gabon_onshore_Asset_layer
+/Pipe_Master
+/TM_WORLD_BORDERS-0.3.dbf
+/TM_WORLD_BORDERS-0.3.prj
+/TM_WORLD_BORDERS-0.3.shp
+/TM_WORLD_BORDERS-0.3.shx
+/_Race_Accross_France_300k_.gpx
+/data
+/db.sqlite3
+/django-avancé.pdf
+/django-gis.v2.pdf
+/trajet.gpx

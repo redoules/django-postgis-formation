@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Carte des villes</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        #map { height: 90vh; width: 100%; }
+    </style>
+</head>
+<body>
+    {% include 'gis/navbar.html' %}
+    <h1>Carte des villes</h1>
+    <div class="progress my-3" style="height: 30px;">
+        <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%">0%</div>
+    </div>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        var map = L.map('map').setView([20, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Chargement par batch avec barre de progression
+        let page = 1;
+        const pageSize = 500;
+        let numPages = null;
+        let loadedPages = 0;
+        function updateProgressBar() {
+            if (numPages) {
+                let percent = Math.round((loadedPages / numPages) * 100);
+                document.getElementById('progress-bar').style.width = percent + '%';
+                document.getElementById('progress-bar').textContent = percent + '%';
+            }
+        }
+        function loadBatch(page) {
+            fetch(`/city_list_geojson/?page=${page}&page_size=${pageSize}`)
+                .then(response => response.json())
+                .then(data => {
+                    var geojson = (typeof data === 'string') ? JSON.parse(data) : data;
+                    L.geoJSON(geojson.features, {
+                        pointToLayer: function(feature, latlng) {
+                            return L.circleMarker(latlng, {radius: 6, color: 'blue', fillOpacity: 0.7});
+                        },
+                        onEachFeature: function (feature, layer) {
+                            if (feature.properties && feature.properties.name) {
+                                layer.bindPopup('Ville : ' + feature.properties.name);
+                            }
+                        }
+                    }).addTo(map);
+                    if (numPages === null) numPages = data.num_pages;
+                    loadedPages++;
+                    updateProgressBar();
+                    if (data.has_next) {
+                        loadBatch(page + 1);
+                    } else {
+                        document.getElementById('progress-bar').classList.remove('progress-bar-animated');
+                    }
+                });
+        }
+        loadBatch(page);
+    </script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Visualisation des buffers des pays</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #map { height: 90vh; width: 100%; }
+    </style>
+</head>
+<body>
+    {% include 'gis/navbar.html' %}
+    <form method="get" id="country-select-form" style="margin-bottom:20px;">
+        <label for="country-select">Choisir un pays :</label>
+        <select name="id" id="country-select" onchange="document.getElementById('country-select-form').submit();">
+            {% for c in countries %}
+                <option value="{{ c.id }}" {% if c.id == selected_id %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+        </select>
+    </form>
+    <h1>{{ country_name }}</h1>
+    <h2>Visualisation des buffers (25 km) autour des pays</h2>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        var map = L.map('map').setView([20, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Récupère l'ID du pays depuis l'URL
+        const params = new URLSearchParams(window.location.search);
+        let url = '/country_buffer_geojson/';
+        if (params.has('id')) {
+            url += '?id=' + encodeURIComponent(params.get('id'));
+        }
+        // Palette de couleurs pour différencier les pays
+        const colors = [
+            '#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00',
+            '#ffff33', '#a65628', '#f781bf', '#999999'
+        ];
+        let countryColorMap = {};
+        let colorIndex = 0;
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                var geojson = (typeof data === 'string') ? JSON.parse(data) : data;
+                // Associer une couleur à chaque pays
+                geojson.features.forEach(f => {
+                    const name = f.properties.name;
+                    if (!(name in countryColorMap)) {
+                        countryColorMap[name] = colors[colorIndex % colors.length];
+                        colorIndex++;
+                    }
+                });
+                L.geoJSON(geojson, {
+                    style: function(feature) {
+                        // Buffer = couleur du pays, original = noir
+                        if (feature.properties.type === 'original') {
+                            return { color: 'black', weight: 2, fillOpacity: 0.1 };
+                        } else {
+                            return {
+                                color: countryColorMap[feature.properties.name],
+                                weight: 2,
+                                fillOpacity: 0.2
+                            };
+                        }
+                    },
+                    onEachFeature: function (feature, layer) {
+                        if (feature.properties && feature.properties.name) {
+                            layer.bindPopup('Pays : ' + feature.properties.name + '<br>Type : ' + feature.properties.type);
+                        }
+                    }
+                }).addTo(map);
+            });
+    </script>
+</body>
+</html>
